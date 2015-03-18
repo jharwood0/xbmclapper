@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xbmclap_thresholdper;
+package xbmclapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,33 +21,12 @@ import javax.sound.sampled.TargetDataLine;
  */
 public class Main {
 
-    private static void PlayPause() {
-        String urlToRead = "http://192.168.0.16:8080/jsonrpc?PlayPause={%22jsonrpc%22:%20%222.0%22,%20%22method%22:%20%22Player.PlayPause%22,%20%22params%22:%20{%20%22playerid%22:%201%20},%20%22id%22:%201}";
-        URL url;
-        HttpURLConnection conn;
-        BufferedReader rd;
-        String line;
-        String result = "";
-        try {
-            url = new URL(urlToRead);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            while ((line = rd.readLine()) != null) {
-                result += line;
-            }
-            rd.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        
+        XBMCRemote remote = new XBMCRemote("192.168.0.16", 8080);
         AudioFormat fmt = new AudioFormat(44100f, 16, 1, true, false);
         final int bufferByteSize = 2048;
 
@@ -65,12 +44,11 @@ public class Main {
 
         float lastPeak = 0f;
 
-        
         boolean inClap = false;
         double clap_threshold = 0.9;
+        int comboThreshold = 500; //300 milli seconds
         long time = System.currentTimeMillis();
         int noClap = 0;
-        
 
         line.start();
         for (int b; (b = line.read(buf, 0, buf.length)) > -1;) {
@@ -102,36 +80,48 @@ public class Main {
             if (!inClap) {
                 //clap_threshold
                 if (peak > clap_threshold) {
-                    //start timer if first clap 
-                    if (noClap == 0) {
-                        time = System.currentTimeMillis();
-                    }
+                    //how long to wait after each clap for another
+                    //if (noClap == 0) {
+                    time = System.currentTimeMillis();
+                    //}
                     noClap++;
                     inClap = true;
                 }
             } else {
                 //we are inClap, check if peak has reduced yet...
-                //below 90% of theshold
-                if (peak < (clap_threshold * 0.9)) {
+                //below 80% of theshold
+                if (peak < (clap_threshold * 0.8)) {
                     inClap = false;
                 }
-
             }
-            
-            if (System.currentTimeMillis() - time > 600 && noClap != 0) {
+
+            if (System.currentTimeMillis() - time > comboThreshold && noClap != 0) {
                 //more function to be added
-                switch(noClap){
-                    case 1:
+                System.out.println("You just clapped " + noClap + " times");
+                switch (noClap) {
+                    case 1: //next
+                        System.out.println("Next episode");
+                        remote.next();
                         break;
-                    case 2:
-                        PlayPause();
+                    case 2: //play / pause
+                        System.out.println("Play/Pause..");
+                        remote.PlayPause();
                         break;
-                    case 3:
+                    case 3: //volume up
+                        System.out.println("Volume");
+                        remote.decVolume();
                         break;
+                    case 4: //volume down
+                        System.out.println("Volume");
+                        remote.incVolume();
+                        break;
+                    case 5: //home
+                        System.out.println("Home");
+                        remote.home();
                 }
                 noClap = 0;
             }
-            
+
             lastPeak = peak;
 
         }
