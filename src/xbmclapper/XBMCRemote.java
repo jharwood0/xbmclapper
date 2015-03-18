@@ -20,7 +20,7 @@ public class XBMCRemote {
     private final String host;
     private final int port;
     private final String rpc = "jsonrpc?request=";
-    private int incdecmultiplier = 10;
+    private final int incdecmultiplier = 10;
 
     private String request(String urlToRead) {
         URL url;
@@ -101,6 +101,11 @@ public class XBMCRemote {
     void home() {
         String home = "{\"jsonrpc\":%20\"2.0\",%20\"method\":%20\"Input.Home\",%20\"id\":%201}";
         request(host + ":" + port + "/" + rpc + home);
+    }
+
+    void help() {
+        String help = "{%20\"jsonrpc\":%20\"2.0\",%20\"method\":%20\"GUI.ShowNotification\",%20\"params\":%20{%20\"title\":%20\"Welcome%20to%20XBMClapper%200.1!\",%20\"message\":%20\"1%20=%20Next,%202%20=%20PlayPause,%203%20=%20Volume%20Up,%204%20=%20Volume%20Down,%205%20=%20Home\"%20},%20\"id\":%201%20}";
+        request(host + ":" + port + "/" + rpc + help);
     }
 
 }

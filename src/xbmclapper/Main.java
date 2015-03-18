@@ -5,11 +5,6 @@
  */
 package xbmclapper;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -44,9 +39,11 @@ public class Main {
 
         float lastPeak = 0f;
 
+        
+        remote.help();
         boolean inClap = false;
         double clap_threshold = 0.9;
-        int comboThreshold = 500; //300 milli seconds
+        int comboThreshold = 500; //500 milli seconds
         long time = System.currentTimeMillis();
         int noClap = 0;
 
@@ -108,11 +105,11 @@ public class Main {
                         remote.PlayPause();
                         break;
                     case 3: //volume up
-                        System.out.println("Volume");
+                        System.out.println("Volume up");
                         remote.decVolume();
                         break;
                     case 4: //volume down
-                        System.out.println("Volume");
+                        System.out.println("Volume down");
                         remote.incVolume();
                         break;
                     case 5: //home
