@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xbmclapper;
+package xbmclap_thresholdper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,8 +21,8 @@ import javax.sound.sampled.TargetDataLine;
  */
 public class Main {
 
-    private static void request() {
-        String urlToRead = "http://192.168.0.16:8080/jsonrpc?request={%22jsonrpc%22:%20%222.0%22,%20%22method%22:%20%22Player.PlayPause%22,%20%22params%22:%20{%20%22playerid%22:%201%20},%20%22id%22:%201}";
+    private static void PlayPause() {
+        String urlToRead = "http://192.168.0.16:8080/jsonrpc?PlayPause={%22jsonrpc%22:%20%222.0%22,%20%22method%22:%20%22Player.PlayPause%22,%20%22params%22:%20{%20%22playerid%22:%201%20},%20%22id%22:%201}";
         URL url;
         HttpURLConnection conn;
         BufferedReader rd;
@@ -65,8 +65,9 @@ public class Main {
 
         float lastPeak = 0f;
 
+        
         boolean inClap = false;
-        double clap = 0.9;
+        double clap_threshold = 0.9;
         long time = System.currentTimeMillis();
         int noClap = 0;
         
@@ -85,68 +86,53 @@ public class Main {
                 samples[s++] = sample / 32768f;
             }
 
-            float rms = 0f;
             float peak = 0f;
             for (float sample : samples) {
-
                 float abs = Math.abs(sample);
                 if (abs > peak) {
                     peak = abs;
                 }
-
-                rms += sample * sample;
             }
-
-            rms = (float) Math.sqrt(rms / samples.length);
 
             if (lastPeak > peak) {
                 peak = lastPeak * 0.875f;
             }
 
-            lastPeak = peak;
-
+            //We have to use inClap boolean to wait for clap_threshold peak to be reduced so it won't detect it as 2 clap_thresholds
             if (!inClap) {
-                if (peak > clap) {
-                    System.out.println("You Just clapped!\n");
-                    //1st clap captured, start timer
+                //clap_threshold
+                if (peak > clap_threshold) {
+                    //start timer if first clap 
                     if (noClap == 0) {
-                        //first clap
                         time = System.currentTimeMillis();
                     }
                     noClap++;
-                    //request();
                     inClap = true;
-                    //}
                 }
             } else {
-//                System.out.println("We are in a clap!");
-//                System.out.println("rms = "+rms);
-//                System.out.println("peak = "+peak);
-
-                if (peak < (clap * 0.9)) {
-                    //System.out.println("We are out of a clap!\n");
-                    //System.out.println(System.currentTimeMillis() - time);
+                //we are inClap, check if peak has reduced yet...
+                //below 90% of theshold
+                if (peak < (clap_threshold * 0.9)) {
                     inClap = false;
-                    //noClap = 0;
-
                 }
 
             }
+            
             if (System.currentTimeMillis() - time > 600 && noClap != 0) {
-                //Clap waiting has finished
-                //process number of claps
+                //more function to be added
                 switch(noClap){
                     case 1:
                         break;
                     case 2:
-                        request();
+                        PlayPause();
                         break;
                     case 3:
                         break;
                 }
-                //System.out.println("You clapped " + noClap);
                 noClap = 0;
             }
+            
+            lastPeak = peak;
 
         }
     }
