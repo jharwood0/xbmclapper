@@ -21,29 +21,29 @@ import javax.sound.sampled.TargetDataLine;
  */
 public class Main {
 
-    
-    private static void request(){
+    private static void request() {
         String urlToRead = "http://192.168.0.16:8080/jsonrpc?request={%22jsonrpc%22:%20%222.0%22,%20%22method%22:%20%22Player.PlayPause%22,%20%22params%22:%20{%20%22playerid%22:%201%20},%20%22id%22:%201}";
         URL url;
-      HttpURLConnection conn;
-      BufferedReader rd;
-      String line;
-      String result = "";
-      try {
-         url = new URL(urlToRead);
-         conn = (HttpURLConnection) url.openConnection();
-         conn.setRequestMethod("GET");
-         rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-         while ((line = rd.readLine()) != null) {
-            result += line;
-         }
-         rd.close();
-      } catch (IOException e) {
-         e.printStackTrace();
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
+        HttpURLConnection conn;
+        BufferedReader rd;
+        String line;
+        String result = "";
+        try {
+            url = new URL(urlToRead);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            while ((line = rd.readLine()) != null) {
+                result += line;
+            }
+            rd.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
     /**
      * @param args the command line arguments
      */
@@ -64,9 +64,12 @@ public class Main {
         float[] samples = new float[bufferByteSize / 2];
 
         float lastPeak = 0f;
-        
+
         boolean inClap = false;
-        double clap = 0.8;
+        double clap = 0.9;
+        long time = System.currentTimeMillis();
+        int noClap = 0;
+        
 
         line.start();
         for (int b; (b = line.read(buf, 0, buf.length)) > -1;) {
@@ -105,20 +108,44 @@ public class Main {
             if (!inClap) {
                 if (peak > clap) {
                     System.out.println("You Just clapped!\n");
-                    System.out.println("Sending:\nhttp://82.45.32.120:8080/jsonrpc?request={%22jsonrpc%22:%20%222.0%22,%20%22id%22:%201,%20%22method%22:%20%22Playlist.GetPlaylists%22}");
-                    request();
+                    //1st clap captured, start timer
+                    if (noClap == 0) {
+                        //first clap
+                        time = System.currentTimeMillis();
+                    }
+                    noClap++;
+                    //request();
                     inClap = true;
+                    //}
                 }
             } else {
-                System.out.println("We are in a clap!");
-                System.out.println("rms = "+rms);
-                System.out.println("peak = "+peak);
-                if (peak < (clap*0.9)) {
-                    System.out.println("We are out of a clap!\n");
+//                System.out.println("We are in a clap!");
+//                System.out.println("rms = "+rms);
+//                System.out.println("peak = "+peak);
+
+                if (peak < (clap * 0.9)) {
+                    //System.out.println("We are out of a clap!\n");
+                    //System.out.println(System.currentTimeMillis() - time);
                     inClap = false;
-                    //we have finsehd the clap
+                    //noClap = 0;
+
                 }
 
+            }
+            if (System.currentTimeMillis() - time > 600 && noClap != 0) {
+                //Clap waiting has finished
+                //process number of claps
+                switch(noClap){
+                    case 1:
+                        break;
+                    case 2:
+                        request();
+                        break;
+                    case 3:
+                        break;
+                }
+                //System.out.println("You clapped " + noClap);
+                noClap = 0;
             }
 
         }
